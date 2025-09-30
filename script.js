@@ -521,6 +521,102 @@ updateDateTime();
         });
     }
 
+
+
+
+
+
+
+
+    // ===================================================================
+// !!! ÉTAPE CRUCIALE : REMPLACEZ CES PLACEHOLDERS PAR VOS VRAIES CLÉS !!!
+// ===================================================================
+const SUPABASE_URL = 'VOTRE_URL_PROJET_ICI'; 
+const SUPABASE_KEY = 'VOTRE_CLE_ANON_PUBLIQUE_ICI';
+// ===================================================================
+
+// Initialisation du client Supabase
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// Fonction utilitaire pour utiliser Supabase via CDN (ne pas modifier)
+function createClient(supabaseUrl, supabaseKey) {
+    return window.supabase.createClient(supabaseUrl, supabaseKey);
+}
+
+const formulaire = document.getElementById('monFormulaire');
+const listeResultats = document.getElementById('listeResultats');
+const messageStatut = document.getElementById('messageStatut');
+
+// -------------------------------------------------------------------
+// A. FONCTION DE LECTURE : CHARGER LES DONNÉES AU DÉMARRAGE DE LA PAGE
+// -------------------------------------------------------------------
+async function chargerDonnees() {
+    messageStatut.textContent = "Chargement des données persistantes...";
+    listeResultats.innerHTML = ''; // Nettoyer l'ancienne liste
+
+    // 1. Requête pour sélectionner toutes les lignes de la table 'utilisateurs'
+    let { data: utilisateurs, error } = await supabase
+        .from('utilisateurs') 
+        .select('*')
+        .order('dateSauvegarde', { ascending: false }); // Trié par la date de sauvegarde (assurez-vous d'avoir une colonne 'dateSauvegarde' si vous triez)
+
+    if (error) {
+        console.error("Erreur de chargement:", error.message);
+        messageStatut.textContent = "Erreur de chargement. Vérifiez la console.";
+        listeResultats.innerHTML = `<li>Erreur: ${error.message}</li>`;
+        return; 
+    }
+    
+    // 2. Afficher les données dans la liste HTML
+    if (utilisateurs.length === 0) {
+        listeResultats.innerHTML = "<li>Aucune donnée n'a encore été enregistrée.</li>";
+    } else {
+        const itemsHTML = utilisateurs.map(u => {
+            // Assurez-vous que les propriétés (nom, email) correspondent à vos colonnes Supabase
+            return `<li>${u.nom} - ${u.email} (ID: ${u.id})</li>`;
+        }).join(''); // Joint les éléments pour former une seule chaîne HTML
+        
+        listeResultats.innerHTML = itemsHTML;
+    }
+
+    messageStatut.textContent = `Chargement terminé. ${utilisateurs.length} enregistrement(s) trouvé(s).`;
+}
+
+// -------------------------------------------------------------------
+// B. GESTION DE LA SOUMISSION DU FORMULAIRE (ÉCRITURE DES DONNÉES)
+// -------------------------------------------------------------------
+formulaire.addEventListener('submit', async function(event) {
+    event.preventDefault(); // Empêche le rechargement de la page
+
+    const nom = document.getElementById('nom').value;
+    const email = document.getElementById('email').value;
+
+    messageStatut.textContent = "Envoi des données à Supabase en cours...";
+
+    // 1. Requête d'insertion dans la table 'utilisateurs'
+    const { error } = await supabase
+        .from('utilisateurs') 
+        .insert([
+            { nom: nom, email: email }, // Objet de données à insérer
+        ]);
+
+    if (error) {
+        console.error('Erreur de sauvegarde:', error.message);
+        messageStatut.textContent = `Échec de la sauvegarde : ${error.message}`;
+        alert("Erreur d'enregistrement.");
+    } else {
+        console.log('Sauvegarde réussie !');
+        messageStatut.textContent = "Sauvegarde réussie ! Mise à jour de la liste...";
+        
+        // 2. Vider le formulaire et recharger la liste pour voir la nouvelle entrée
+        formulaire.reset(); 
+        await chargerDonnees();
+    }
+});
+
+// Lancer le chargement des données au démarrage de l'application
+window.onload = chargerDonnees;
+
     function updateProfitDistributionChart() {
         const profitBySource = {
             'Chiffre d\'Affaire Achat': versements.reduce((sum, v) => sum + v.caAchat, 0),
@@ -711,6 +807,7 @@ updateDateTime();
     displayVersements();
     showSection('dashboard');
 });
+
 
 
 
