@@ -1,0 +1,31 @@
+{
+  "name": "comptable-pd-gi",
+  "version": "1.0.0",
+  "description": "Application Node.js/Express pour la gestion comptable, déployée sur Vercel.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": [
+    "node",
+    "express",
+    "vercel",
+    "mongoose",
+    "mongodb"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@vercel/kv": "^3.0.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "mongodb": "^6.20.0",
+    "mongoose": "^8.19.1",
+    "redis": "^5.8.3"
+  },
+  "devDependencies": {
+    "dotenv": "^17.2.3",
+    "nodemon": "^3.1.4"
+  }
+}
