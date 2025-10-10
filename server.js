@@ -1,7 +1,7 @@
-// server.js (Code Final, Fusionné et Corrigé)
+// server.js (Optimisé pour Local ET Vercel)
 
 // Importations des modules nécessaires
-require('dotenv').config(); // Charge les variables d'environnement du fichier .env
+require('dotenv').config(); 
 
 const express = require('express');
 const mongoose = require('mongoose');
@@ -11,26 +11,47 @@ const cors = require('cors');
 // Initialisation d'Express
 const app = express();
 const PORT = process.env.PORT || 3000; 
-const MONGODB_URI = process.env.MONGODB_URI; // Récupère l'URI du fichier .env
+const MONGODB_URI = process.env.MONGODB_URI; 
 
-// Vérification de la variable d'environnement
-if (!MONGODB_URI) {
-    console.error("❌ ERREUR: La variable MONGODB_URI n'est pas définie dans le fichier .env.");
-    process.exit(1);
-}
+// ----------------------------------------------------
+// --- Configuration CORS (Cruciale pour Vercel) ---
+// ----------------------------------------------------
 
-// Middlewares
-app.use(cors()); 
-app.use(express.json()); // Pour analyser les corps de requête JSON
-app.use(express.urlencoded({ extended: true })); // Pour les données de formulaire classiques
+// Vercel fournit automatiquement la variable VERCEL_URL.
+// On autorise à la fois localhost et l'URL de production/preview Vercel.
+const VERCEL_DOMAIN = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined;
+const allowedOrigins = [
+  'http://localhost:3000', // Votre domaine local
+  'http://localhost:5173', // Port souvent utilisé pour le développement front-end
+  VERCEL_DOMAIN 
+].filter(Boolean); // Retire les valeurs undefined
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true); 
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      // Pour les requêtes provenant d'autres origines non listées
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true,
+})); 
+
+// Middlewares standards
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Configuration pour servir les fichiers statiques (HTML, CSS, JS client)
-// Assurez-vous que vos fichiers frontend sont dans un dossier 'public'
+// Assurez-vous que tous vos fichiers front-end sont dans un dossier nommé 'public'
 app.use(express.static(path.join(__dirname, 'public')));
 
 
 // ----------------------------------------------------
-// --- Modèles Mongoose ---
+// --- Modèles Mongoose (Doivent être inclus ici) ---
 // ----------------------------------------------------
 
 // Modèle Entreprise
@@ -45,9 +66,9 @@ const Entreprise = mongoose.model('Entreprise', entrepriseSchema);
 // Modèle Versement
 const versementSchema = new mongoose.Schema({
     entrepriseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Entreprise', required: true },
-    typeEntreprise: { type: String, required: true }, // Redondance pour faciliter les requêtes
-    dg: { type: String, required: true },             // Redondance
-    comptable: { type: String, required: true },      // Redondance
+    typeEntreprise: { type: String, required: true }, 
+    dg: { type: String, required: true }, 
+    comptable: { type: String, required: true }, 
     dateVersement: { type: Date, required: true },
     caAchat: { type: Number, default: 0 },
     caProduction: { type: Number, default: 0 },
@@ -98,7 +119,6 @@ app.delete('/api/entreprises/:id', async (req, res) => {
         const entreprise = await Entreprise.findByIdAndDelete(req.params.id);
         if (!entreprise) return res.status(404).json({ message: "Entreprise non trouvée." });
         
-        // Supprime tous les versements associés (bonne pratique de cohérence)
         await Versement.deleteMany({ entrepriseId: entreprise._id });
 
         res.status(200).json({ message: "Entreprise et versements associés supprimés." });
@@ -120,7 +140,6 @@ app.get('/api/versements', async (req, res) => {
 
 app.post('/api/versements', async (req, res) => {
     try {
-        // Récupère les infos DG/Comptable/Type pour les intégrer au versement (dénormalisation)
         const entreprise = await Entreprise.findById(req.body.entrepriseId);
         if (!entreprise) return res.status(404).json({ message: "Entreprise non trouvée pour le versement." });
         
@@ -141,8 +160,6 @@ app.post('/api/versements', async (req, res) => {
 
 app.put('/api/versements/:id', async (req, res) => {
     try {
-        // Note: L'update ne met pas à jour automatiquement les champs DG/Comptable si l'entreprise mère change.
-        // C'est un choix de design (ici, on ne les met à jour que lors du POST initial).
         const updatedVersement = await Versement.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
         if (!updatedVersement) return res.status(404).json({ message: "Versement non trouvé." });
         res.status(200).json(updatedVersement);
@@ -163,17 +180,28 @@ app.delete('/api/versements/:id', async (req, res) => {
 
 
 // ----------------------------------------------------
-// --- Connexion à MongoDB et Démarrage du Serveur ---
+// --- Exportation pour Vercel / Démarrage pour Local ---
 // ----------------------------------------------------
 
+// 1. Connexion à la Base de Données
 mongoose.connect(MONGODB_URI)
   .then(() => {
     console.log('✅ Connexion à MongoDB Atlas réussie!');
-    app.listen(PORT, () => {
-      console.log(`🚀 Serveur Express démarré sur http://localhost:${PORT}`);
-    });
+
+    // 2. Démarrage du serveur UNIQUEMENT en mode développement local
+    if (process.env.NODE_ENV !== 'production') {
+        app.listen(PORT, () => {
+            console.log(`🚀 Serveur Express démarré sur http://localhost:${PORT}`);
+        });
+    }
   })
   .catch(err => {
     console.error('❌ ERREUR DE CONNEXION À MONGOOSE:', err.message);
-    process.exit(1); // Arrêt propre en cas d'échec
+    if (process.env.NODE_ENV !== 'production') {
+        process.exit(1); 
+    }
   });
+
+// 3. EXPORTATION : Ligne CRUCIALE pour Vercel
+// Vercel importe ce gestionnaire d'application pour l'exécuter comme une fonction serverless.
+module.exports = app;

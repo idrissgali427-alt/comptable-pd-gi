@@ -1,5 +1,3 @@
-// Java.js (Code JavaScript Complet)
-
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- Initialisation et variables globales (Références DOM) ---
@@ -14,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const formulaireEntrepriseForm = document.getElementById('formulaireEntrepriseForm');
     const tableEntreprisesBody = document.querySelector('#table-formulaire-entreprise tbody');
     const entrepriseIdInput = document.getElementById('entrepriseId');
-    const comptableFormInput = document.getElementById('comptableForm'); // Nom du comptable (du Header)
+    const comptableFormInput = document.getElementById('comptableForm');
     const cancelEntrepriseEditButton = document.getElementById('cancelEntrepriseEdit');
 
     // Versements
@@ -55,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    // --- GESTION DE LA NAVIGATION (CORRECTION DES LIENS) ---
+    // --- GESTION DE LA NAVIGATION ---
 
     function showSection(sectionId) {
         // 1. Masquer toutes les sections
@@ -85,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
     sidebarNavLinks.forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
-            const targetId = link.getAttribute('data-section'); // Utilise data-section
+            const targetId = link.getAttribute('data-section');
             if (targetId) {
                 showSection(targetId);
             }
@@ -93,10 +91,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Fonctions API : Récupérer les données ---
+    // Les appels utilisent des chemins relatifs /api/... qui sont corrects pour Vercel
 
     async function fetchEntreprises() {
         try {
-            const response = await fetch('/api/entreprises');
+            const response = await fetch('/api/entreprises'); // CHEMIN RELATIF CORRECT
             if (!response.ok) throw new Error('Échec du chargement des entreprises');
             entreprises = await response.json();
         } catch (error) {
@@ -107,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchVersements() {
         try {
-            const response = await fetch('/api/versements');
+            const response = await fetch('/api/versements'); // CHEMIN RELATIF CORRECT
             if (!response.ok) throw new Error('Échec du chargement des versements');
             versements = await response.json();
         } catch (error) {
@@ -121,21 +120,19 @@ document.addEventListener('DOMContentLoaded', () => {
         await fetchVersements();
         displayEntreprises();
         displayVersements();
-        updateEntrepriseSelects(); // Met à jour tous les <select> d'entreprise
+        updateEntrepriseSelects();
     }
 
     // --- Fonctions d'Affichage et de Mise à Jour ---
     
     // Met à jour tous les <select> d'entreprise
     function updateEntrepriseSelects() {
-        // Liste des selects à mettre à jour
         const selects = [typeEntrepriseVersementSelect, bilanTypeEntrepriseSelect, conseilTypeEntrepriseSelect];
         
         selects.forEach(select => {
             const initialValue = select.value;
             select.innerHTML = '';
             
-            // Option par défaut (Toutes les entreprises pour Bilan/Conseils, Sélectionner pour Versement)
             if (select.id === 'typeEntrepriseVersement') {
                 select.innerHTML = '<option value="">-- Sélectionner une entreprise --</option>';
             } else {
@@ -148,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 option.textContent = `${entreprise.typeEntreprise} (${entreprise.dg})`;
                 select.appendChild(option);
             });
-            select.value = initialValue; // Tente de conserver la sélection
+            select.value = initialValue; 
         });
     }
 
@@ -162,7 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
             comptableVersementInput.value = selectedEntreprise.comptable;
         } else {
             dgVersementInput.value = '';
-            comptableVersementInput.value = accountantNameInput.value; // Par défaut le comptable global
+            comptableVersementInput.value = accountantNameInput.value;
         }
     });
 
@@ -179,14 +176,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const actionsCell = row.insertCell(5);
             
-            // Bouton Modifier (fonctionnel)
             const editBtn = document.createElement('button');
             editBtn.textContent = 'Modifier';
             editBtn.classList.add('btn', 'btn-edit');
             editBtn.onclick = () => editEntreprise(entreprise._id); 
             actionsCell.appendChild(editBtn);
 
-            // Bouton Supprimer (fonctionnel)
             const deleteBtn = document.createElement('button');
             deleteBtn.textContent = 'Supprimer';
             deleteBtn.classList.add('btn', 'btn-delete');
@@ -200,8 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
         versements.forEach((versement, index) => {
             const row = tableVersementMensuelBody.insertRow();
             
-            // Cellules de données
-            row.insertCell(0).textContent = index + 1; // Numéro de rapport
+            row.insertCell(0).textContent = index + 1;
             row.insertCell(1).textContent = versement.typeEntreprise;
             row.insertCell(2).textContent = versement.dg;
             row.insertCell(3).textContent = versement.comptable;
@@ -215,14 +209,12 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const actionsCell = row.insertCell(11);
             
-            // Bouton Modifier (fonctionnel)
             const editBtn = document.createElement('button');
             editBtn.textContent = 'Modifier';
             editBtn.classList.add('btn', 'btn-edit');
             editBtn.onclick = () => editVersement(versement._id);
             actionsCell.appendChild(editBtn);
 
-            // Bouton Supprimer (fonctionnel)
             const deleteBtn = document.createElement('button');
             deleteBtn.textContent = 'Supprimer';
             deleteBtn.classList.add('btn', 'btn-delete');
@@ -275,13 +267,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }]
         };
         createOrUpdateChart('summaryChart', 'doughnut', summaryChartData);
-
-        // Les autres graphiques (purchaseProductionChart, companyPerformanceChart, monthlyProfitChart, profitDistributionChart)
-        // nécessitent une logique d'agrégation plus complexe (par entreprise, par mois) qui est trop longue à inclure ici,
-        // mais le principe d'appel est le même :
-
-        // createOrUpdateChart('purchaseProductionChart', 'bar', dataPourAchatVsProd);
-        // ...
     }
 
     // Fonction générique de création/mise à jour de graphique
@@ -315,12 +300,12 @@ document.addEventListener('DOMContentLoaded', () => {
             typeEntreprise: document.getElementById('typeEntrepriseForm').value,
             dg: document.getElementById('dgForm').value,
             date: document.getElementById('dateForm').value,
-            comptable: accountantNameInput.value // Prend le nom du comptable dans le header
+            comptable: accountantNameInput.value
         };
 
         const id = entrepriseIdInput.value;
         const method = id ? 'PUT' : 'POST';
-        const url = id ? `/api/entreprises/${id}` : '/api/entreprises';
+        const url = id ? `/api/entreprises/${id}` : '/api/entreprises'; // CHEMIN RELATIF CORRECT
 
         try {
             const response = await fetch(url, {
@@ -350,7 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('typeEntrepriseForm').value = entrepriseToEdit.typeEntreprise;
             document.getElementById('dgForm').value = entrepriseToEdit.dg;
             document.getElementById('dateForm').value = entrepriseToEdit.date.substring(0, 10);
-            comptableFormInput.value = entrepriseToEdit.comptable; // Affichage dans le champ désactivé
+            comptableFormInput.value = entrepriseToEdit.comptable;
             cancelEntrepriseEditButton.style.display = 'inline-block';
             showSection('formulaire-entreprise');
         }
@@ -359,7 +344,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function deleteEntreprise(id) {
         if (confirm('Êtes-vous sûr de vouloir supprimer cette entreprise et ses versements ?')) {
             try {
-                const response = await fetch(`/api/entreprises/${id}`, { method: 'DELETE' });
+                const response = await fetch(`/api/entreprises/${id}`, { method: 'DELETE' }); // CHEMIN RELATIF CORRECT
                 if (!response.ok) throw new Error('Échec de la suppression.');
 
                 alert('Suppression réussie !');
@@ -404,7 +389,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const id = versementIdInput.value;
         const method = id ? 'PUT' : 'POST';
-        const url = id ? `/api/versements/${id}` : '/api/versements';
+        const url = id ? `/api/versements/${id}` : '/api/versements'; // CHEMIN RELATIF CORRECT
 
         try {
             const response = await fetch(url, {
@@ -432,7 +417,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (versementToEdit) {
             versementIdInput.value = versementToEdit._id;
             
-            // Remplir les champs
             typeEntrepriseVersementSelect.value = versementToEdit.entrepriseId;
             dateVersementInput.value = versementToEdit.dateVersement.substring(0, 10);
             document.getElementById('caAchat').value = versementToEdit.caAchat;
@@ -442,7 +426,6 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('caVente').value = versementToEdit.caVente;
             document.getElementById('montantDepenses').value = versementToEdit.montantDepenses;
             
-            // Mettre à jour les champs désactivés (DG/Comptable)
             dgVersementInput.value = versementToEdit.dg;
             comptableVersementInput.value = versementToEdit.comptable;
             
@@ -454,7 +437,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function deleteVersement(id) {
         if (confirm('Êtes-vous sûr de vouloir supprimer ce versement ?')) {
             try {
-                const response = await fetch(`/api/versements/${id}`, { method: 'DELETE' });
+                const response = await fetch(`/api/versements/${id}`, { method: 'DELETE' }); // CHEMIN RELATIF CORRECT
                 if (!response.ok) throw new Error('Échec de la suppression.');
 
                 alert('Suppression réussie !');
@@ -475,20 +458,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 
-    // --- Logique Bilan et Conseils (à implémenter si besoin) ---
+    // --- Logique Bilan et Conseils (Non API) ---
 
-    // La logique détaillée pour générer un Bilan ou des Conseils basés sur les filtres
-    // (bilanMois, bilanAnnee, bilanTypeEntreprise) n'est pas incluse car elle est longue,
-    // mais le bouton ci-dessous est maintenant branché.
-    
     genererBilanBtn.addEventListener('click', () => {
         bilanOutputDiv.innerHTML = '<p class="loading">Génération du bilan...</p>';
         setTimeout(() => {
             const mois = document.getElementById('bilanMois').value;
             const annee = document.getElementById('bilanAnnee').value;
             const entrepriseId = document.getElementById('bilanTypeEntreprise').value;
-
-            // Logique de filtrage ici (utilisant le tableau 'versements')
 
             bilanOutputDiv.innerHTML = `<h3>Bilan pour ${mois}/${annee}</h3><p>Contenu du bilan pour l'entreprise sélectionnée (ID: ${entrepriseId}) à implémenter ici.</p>`;
             document.getElementById('printBilanBtn').style.display = 'inline-block';
@@ -508,32 +485,3 @@ document.addEventListener('DOMContentLoaded', () => {
     loadAllDataAndDisplay();
     showSection('dashboard'); // Affiche le tableau de bord au démarrage
 });
-
-
-
-// server.js (partie des routes)
-// Assurez-vous d'avoir les middlewares nécessaires :
-app.use(express.json());
-app.use(express.static('...')); // Pour servir vos fichiers HTML/CSS/JS
-
-// Route POST: Créer une nouvelle entreprise
-app.post('/api/entreprises', async (req, res) => {
-    try {
-        const nouvelleEntreprise = new Entreprise(req.body);
-        await nouvelleEntreprise.save();
-        res.status(201).json(nouvelleEntreprise);
-    } catch (err) {
-        res.status(400).json({ message: err.message });
-    }
-});
-
-// Route GET: Récupérer toutes les entreprises
-app.get('/api/entreprises', async (req, res) => {
-    try {
-        const entreprises = await Entreprise.find();
-        res.json(entreprises);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
-});
-// ... Les autres routes (PUT, DELETE) doivent être implémentées de manière similaire.
