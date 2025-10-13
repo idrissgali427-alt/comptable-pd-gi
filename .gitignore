@@ -1,0 +1,9 @@
+# Fichier .gitignore minimal et essentiel pour Node.js
+
+# Dépendances (à ne jamais inclure)
+/node_modules
+
+# Fichiers d'environnement sensibles (CRITIQUE pour la sécurité)
+.env
+.env.local
+.vercel
